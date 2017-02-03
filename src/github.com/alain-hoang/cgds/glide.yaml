@@ -1,0 +1,5 @@
+package: .
+import:
+- package: code.cloudfoundry.org/cli
+  subpackages:
+  - plugin

@@ -1,0 +1,20 @@
+hash: 0d19c4c991b5975e185d144eafe334264ac28ea09d81e955fbcf9a3211dccfdf
+updated: 2017-02-03T10:50:22.452562028-06:00
+imports:
+- name: code.cloudfoundry.org/cli
+  version: a8bf304b4d7cb43fec26363b9f2e92682977f141
+  subpackages:
+  - plugin
+  - plugin/models
+- name: github.com/andybalholm/cascadia
+  version: 349dd0209470eabd9514242c688c403c0926d266
+- name: github.com/PuerkitoBio/goquery
+  version: 3cb3b8656883c2cc3deb9c643d93ea6e5157e425
+- name: golang.org/x/net
+  version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
+  repo: https://go.googlesource.com/net
+  subpackages:
+  - html
+  - html/atom
+  - websocket
+testImports: []
