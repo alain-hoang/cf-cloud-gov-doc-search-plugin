@@ -6,6 +6,8 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/PuerkitoBio/goquery"
+	"runtime"
+	"os"
 )
 
 type CloudGovDocSearchPlugin struct{}
@@ -29,13 +31,15 @@ func getResults(searchTerm string) []SearchResult {
 }
 
 func parseResults(doc *goquery.Document) []SearchResult {
-	res := make([]SearchResult, 0)
+	var res []SearchResult
 
 	doc.Find(".content-block-item.result").Each(func(i int, s *goquery.Selection) {
 		s1 := s.Find("a")
-		link, _ := s1.Attr("href")
-		sr := SearchResult{Url: link, Descr: s1.Text()}
-		res = append(res, sr)
+		link, ok := s1.Attr("href")
+		if ok {
+			sr := SearchResult{Url: link, Descr: s1.Text()}
+			res = append(res, sr)
+		}
 	})
 
 	return res
@@ -47,23 +51,57 @@ func printResults(sr []SearchResult) {
 	}
 }
 
+func chooseFromResults(sr []SearchResult) error {
+	var choice int
+
+	fmt.Printf("\nEnter Choice: ")
+	_, err := fmt.Scanf("%d\n", &choice)
+	if err != nil {
+		fmt.Printf("Error entering choice: %v\n", err)
+	} else {
+		if choice < len(sr) {
+			fmt.Printf("Chose %d, going to %s\n", choice, sr[choice].Url)
+			err = openUrl(sr[choice].Url)
+		} else {
+			fmt.Printf("Invalid choice %d\n", choice)
+		}
+	}
+
+	return err
+}
+
+func openUrl(url string) error {
+	var err error
+	var cmds = map[string][]string{
+		"windows": []string{"cmd", "/c", "start"},
+		"darwin":  []string{"open"},
+		"linux":   []string{"xdg-open"},
+	}
+
+	cmd, ok := cmds[runtime.GOOS]
+	if ok {
+		cmd = append(cmd, url)
+		c := exec.Command(cmd[0], cmd[1:]...)
+		err = c.Run()
+		if err != nil {
+			fmt.Printf("Error trying run execute: %v\n", err)
+		}
+	} else {
+		fmt.Printf("Error running on platform %s\n", runtime.GOOS)
+	}
+
+	return err
+}
+
 func (c *CloudGovDocSearchPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	// Ensure that we called the command basic-plugin-command
 	if args[0] == "cloud-gov-doc-search" {
 		if len(args) > 1 {
-			var choice int
 			sr := getResults(args[1])
 			printResults(sr)
-
-			// Get choice and try navigating to choice
-			fmt.Printf("\nEnter Choice: ")
-			fmt.Scanf("%d", &choice)
-			fmt.Printf("Chose %d, going to %s\n", choice, sr[choice].Url)
-
-			cmd := exec.Command("open", sr[choice].Url)
-			err := cmd.Run()
+			err := chooseFromResults(sr)
 			if err != nil {
-				fmt.Printf("Error trying run execute: %v\n", err)
+				os.Exit(1)
 			}
 		}
 	}
